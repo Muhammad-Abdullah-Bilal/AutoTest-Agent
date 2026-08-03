@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 function App() {
   const [code, setCode] = useState("");
   const [useCase, setUseCase] = useState("");
@@ -26,7 +28,7 @@ function App() {
     setError(null);
     setTestResults(null);
     try {
-      const response = await fetch("http://localhost:5000/api/generate-tests", {
+      const response = await fetch(`${API_BASE_URL}/api/generate-tests`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -56,7 +58,7 @@ function App() {
     setRunningTests(true);
     setError(null);
     try {
-      const response = await fetch("http://localhost:5000/api/run-tests", {
+      const response = await fetch(`${API_BASE_URL}/api/run-tests`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
