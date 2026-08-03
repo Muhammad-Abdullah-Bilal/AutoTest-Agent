@@ -1,8 +1,12 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 
+let API_BASE_URL = import.meta.env.VITE_API_URL || 
   (window.location.origin.includes("localhost") ? "http://localhost:5000" : "");
+
+if (API_BASE_URL.endsWith("/")) {
+  API_BASE_URL = API_BASE_URL.slice(0, -1);
+}
 
 function App() {
   const [code, setCode] = useState("");
