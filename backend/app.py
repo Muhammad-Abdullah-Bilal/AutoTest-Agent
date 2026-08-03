@@ -16,13 +16,25 @@ app = Flask(__name__, static_folder='static')
 CORS(app)
 
 # Serve React static frontend
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
+@app.route('/', defaults={'path': ''}, methods=['GET', 'POST', 'OPTIONS'])
+@app.route('/<path:path>', methods=['GET', 'POST', 'OPTIONS'])
 def serve(path):
-    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
-        return send_from_directory(app.static_folder, path)
-    else:
+    if request.method in ['POST', 'OPTIONS'] or (path != "" and not os.path.exists(os.path.join(app.static_folder, path))):
+        return jsonify({
+            'error': f'Route not found: {request.method} {request.path}',
+            'debug_info': {
+                'path': path,
+                'method': request.method,
+                'url': request.url,
+                'path_info': request.environ.get('PATH_INFO'),
+                'request_path': request.path
+            }
+        }), 404
+    
+    # Otherwise serve static files (if index.html is needed fallback to it)
+    if path == "":
         return send_from_directory(app.static_folder, 'index.html')
+    return send_from_directory(app.static_folder, path)
 
 # Add a health check endpoint
 @app.route('/api/health', methods=['GET'])
