@@ -61,6 +61,11 @@ def execute_tests(code, test_code):
         # Add the temp directory to sys.path so pytest can import 'module'
         sys.path.insert(0, temp_dir)
         
+        # Clean up any previously cached 'module' or 'test_module' from sys.modules
+        for key in list(sys.modules.keys()):
+            if key in ['module', 'test_module'] or key.startswith('module.') or key.startswith('test_module.'):
+                sys.modules.pop(key, None)
+        
         # Redirect stdout and stderr to capture pytest output
         stdout_backup = sys.stdout
         stderr_backup = sys.stderr
@@ -90,6 +95,10 @@ def execute_tests(code, test_code):
             sys.stderr = stderr_backup
             if temp_dir in sys.path:
                 sys.path.remove(temp_dir)
+            # Clean up the module cache after running to keep sys.modules clean
+            for key in list(sys.modules.keys()):
+                if key in ['module', 'test_module'] or key.startswith('module.') or key.startswith('test_module.'):
+                    sys.modules.pop(key, None)
 
 @app.route('/api/generate-tests', methods=['POST', 'OPTIONS'])
 @app.route('/generate-tests', methods=['POST', 'OPTIONS'])
