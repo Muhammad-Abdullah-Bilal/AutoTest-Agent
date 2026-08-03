@@ -83,9 +83,11 @@ def execute_tests(code, test_code):
                 "output": f"Failed to execute tests: {str(e)}"
             }
 
-@app.route('/api/generate-tests', methods=['POST'])
-@app.route('/generate-tests', methods=['POST'])
+@app.route('/api/generate-tests', methods=['POST', 'OPTIONS'])
+@app.route('/generate-tests', methods=['POST', 'OPTIONS'])
 def generate_tests():
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
     data = request.json
     code = data.get('code')
     use_case = data.get('useCase')
@@ -114,9 +116,11 @@ def generate_tests():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/run-tests', methods=['POST'])
-@app.route('/run-tests', methods=['POST'])
+@app.route('/api/run-tests', methods=['POST', 'OPTIONS'])
+@app.route('/run-tests', methods=['POST', 'OPTIONS'])
 def run_tests_endpoint():
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
     data = request.json
     code = data.get('code')
     tests = data.get('tests')
