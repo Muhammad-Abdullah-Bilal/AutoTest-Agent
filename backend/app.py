@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from test_generator.analyzer import CodeAnalyzer
 from test_generator.test_generator import TestGenerator
@@ -12,8 +12,17 @@ load_dotenv()
 if not os.getenv('GROQ_API_KEY'):
     raise ValueError("GROQ_API_KEY not found in environment variables")
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 CORS(app)
+
+# Serve React static frontend
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
 
 # Add a health check endpoint
 @app.route('/api/health', methods=['GET'])
