@@ -26,6 +26,7 @@ def serve(path):
 
 # Add a health check endpoint
 @app.route('/api/health', methods=['GET'])
+@app.route('/health', methods=['GET'])
 def health_check():
     return jsonify({'status': 'healthy'})
 
@@ -71,6 +72,7 @@ def execute_tests(code, test_code):
             }
 
 @app.route('/api/generate-tests', methods=['POST'])
+@app.route('/generate-tests', methods=['POST'])
 def generate_tests():
     data = request.json
     code = data.get('code')
@@ -101,6 +103,7 @@ def generate_tests():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/run-tests', methods=['POST'])
+@app.route('/run-tests', methods=['POST'])
 def run_tests_endpoint():
     data = request.json
     code = data.get('code')
