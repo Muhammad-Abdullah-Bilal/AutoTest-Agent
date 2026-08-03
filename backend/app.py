@@ -44,9 +44,10 @@ def health_check():
 
 def execute_tests(code, test_code):
     import tempfile
-    import subprocess
-    import sys
     import os
+    import sys
+    import io
+    import pytest
 
     with tempfile.TemporaryDirectory() as temp_dir:
         module_path = os.path.join(temp_dir, "module.py")
@@ -57,31 +58,38 @@ def execute_tests(code, test_code):
         with open(test_path, "w", encoding="utf-8") as f:
             f.write(test_code)
             
+        # Add the temp directory to sys.path so pytest can import 'module'
+        sys.path.insert(0, temp_dir)
+        
+        # Redirect stdout and stderr to capture pytest output
+        stdout_backup = sys.stdout
+        stderr_backup = sys.stderr
+        string_io = io.StringIO()
+        sys.stdout = string_io
+        sys.stderr = string_io
+        
         try:
-            result = subprocess.run(
-                [sys.executable, "-m", "pytest", "test_module.py"],
-                cwd=temp_dir,
-                capture_output=True,
-                text=True,
-                timeout=30
-            )
+            # Run pytest inside the same process
+            exit_code = pytest.main([test_path, "-vv"])
+            output = string_io.getvalue()
+            
             return {
-                "success": result.returncode == 0,
-                "exit_code": result.returncode,
-                "output": result.stdout + "\n" + result.stderr
-            }
-        except subprocess.TimeoutExpired as e:
-            return {
-                "success": False,
-                "exit_code": -1,
-                "output": f"Tests timed out after 30 seconds.\nStdout: {e.stdout or ''}\nStderr: {e.stderr or ''}"
+                "success": int(exit_code) == 0,
+                "exit_code": int(exit_code),
+                "output": output
             }
         except Exception as e:
             return {
                 "success": False,
                 "exit_code": -1,
-                "output": f"Failed to execute tests: {str(e)}"
+                "output": f"Failed to run pytest programmatically: {str(e)}"
             }
+        finally:
+            # Restore stdout and stderr and clean up sys.path
+            sys.stdout = stdout_backup
+            sys.stderr = stderr_backup
+            if temp_dir in sys.path:
+                sys.path.remove(temp_dir)
 
 @app.route('/api/generate-tests', methods=['POST', 'OPTIONS'])
 @app.route('/generate-tests', methods=['POST', 'OPTIONS'])
@@ -97,8 +105,12 @@ def generate_tests():
         return jsonify({'error': 'Code and use case are required'}), 400
     
     try:
-        analyzer = CodeAnalyzer(code)
-        code_analysis = analyzer.analyze()
+        try:
+            analyzer = CodeAnalyzer(code)
+            code_analysis = analyzer.analyze()
+        except Exception as ae:
+            print(f"AST Code analysis failed (proceeding anyway): {ae}")
+            code_analysis = None
         
         test_generator = TestGenerator(code, use_case, code_analysis)
         tests = test_generator.generate()
